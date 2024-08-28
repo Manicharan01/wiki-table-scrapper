@@ -1,41 +1,62 @@
 import puppeteer from "puppeteer";
+import fs from "fs";
 
-const getQuotes = async () => {
+//Link
+const link = ""; //Link of the site which contains table you want to scrape
+
+//Function to scrape the table from wanted website
+const getTable = async () => {
+  //To launch the browser
   const browser = await puppeteer.launch({
     headless: false,
     defaultViewport: null,
   });
 
+  //Creates a new tab
   const page = await browser.newPage();
 
-  await page.goto("https://en.wikipedia.org/wiki/One_Piece_season_1", {
+  //Go to the mentioned link
+  await page.goto(link, {
     waitUntil: "domcontentloaded",
   });
 
-  const tables = await page.evaluate(() => {
-    const table = document.querySelector(
+  //To grab table and its contents
+  const table = await page.evaluate(() => {
+    const tableSelector = document.querySelector(
       ".wikitable.plainrowheaders.wikiepisodetable",
     );
 
-    const tableRow = table?.querySelector(".vevent.module-episode-list-row");
+    const tableRowSelector = tableSelector?.querySelectorAll(
+      ".vevent.module-episode-list-row",
+    );
 
-    const rowContent = tableRow?.querySelectorAll("td");
+    const rows: any = {};
 
-    const content: any = {};
+    if (tableRowSelector) {
+      for (let i = 0; i < tableRowSelector.length; i++) {
+        const rowContent = tableRowSelector[i]?.querySelectorAll("td");
 
-    if (rowContent) {
-      for (let i = 0; i < rowContent?.length; i++) {
-        const something = rowContent[i]?.innerText;
-        content[i] = something;
+        const content: any = {};
+
+        if (rowContent) {
+          for (let i = 0; i < rowContent?.length; i++) {
+            const something = rowContent[i]?.innerText;
+            content[i] = something;
+          }
+        }
+
+        rows[i] = content;
       }
     }
 
-    return content;
+    return rows;
   });
 
-  console.log(tables);
+  console.log(table);
+
+  fs.writeFileSync("", JSON.stringify(table)); //In quotes enter the file name or folder with file name you want to save the scrapped table
 
   await browser.close();
 };
 
-getQuotes();
+getTable();
